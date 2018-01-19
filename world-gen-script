@@ -65,7 +65,7 @@ while [[ $count -lt $cycles && $statuscode -ne 1 ]]; do # While count is less th
 		if [ -d "data/save/region99" ]; then # If "region99" was created during world generation, then ...
 			echo "Done!"
 			echo -n "    Reading world name... "
-			name=$(head -n1 region99-*-world_history.txt) # Read the first line of "region99-world_history.txt" to get the world name.
+			name=$(iconv -f CP437 -t UTF-8 region99-*-world_history.txt | head -n1) # Read the first line of "region99-world_history.txt" to get the world name.
 			echo " Done! ($name)"
 			echo -n "    Organizing files... "
 			if [ -d "data/save/$name" ]; then # If a world already exists that has the same name ...
