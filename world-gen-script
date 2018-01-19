@@ -66,6 +66,14 @@ while [[ $count -lt $cycles && $statuscode -ne 1 ]]; do # While count is less th
 			echo "Done!"
 			echo -n "    Reading world name... "
 			name=$(iconv -f CP437 -t UTF-8 region99-*-world_history.txt | head -n1) # Read the first line of "region99-world_history.txt" to get the world name.
+			if [[ -e "data/save/$name" ]] ; then
+				echo -n "World with name $name already exists, renaming..."
+				i=0
+				while [[ -e $name-$i ]] ; do
+					let i++
+				done
+				name=$name-$i
+			fi
 			echo " Done! ($name)"
 			echo -n "    Organizing files... "
 			if [ -d "data/save/$name" ]; then # If a world already exists that has the same name ...
