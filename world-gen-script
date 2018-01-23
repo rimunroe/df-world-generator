@@ -60,8 +60,16 @@ while [[ $count -lt $cycles && $statuscode -ne 1 ]]; do # While count is less th
 		statuscode=1
 		errorcode=1
 	else # Otherwise ...
-		echo -n "    Generating world... "
-		quietly ./df -gen 99 $seed "$params" # Quietly execute Dwarf Fortress in world generation mode.
+		while [ true ]; do
+			echo -n "    Generating world... "
+			quietly ./df -gen 99 $seed "$params" # Quietly execute Dwarf Fortress in world generation mode.
+			wait $!
+			if [ "$!" = 139 ]; then
+				echo -n "Dwarf Fortress segfaulted. Restarting..."
+			else
+				break
+			fi
+		done
 		if [ -d "data/save/region99" ]; then # If "region99" was created during world generation, then ...
 			echo "Done!"
 			echo -n "    Reading world name... "
