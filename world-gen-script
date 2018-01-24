@@ -44,7 +44,7 @@ function quietly() { "$@" > /dev/null; } # Simple function to silence the output
 
 function do_generate_world() {
 	echo -n "    Generating world... "
-	while [ true ]; do
+	while : ; do
 		quietly ./df -gen 99 $seed "$params" # Quietly execute Dwarf Fortress in world generation mode.
 		wait $!
 		if [[ "$!" == 139 ]]; then
