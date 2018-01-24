@@ -30,13 +30,13 @@
 #       ! Initial Release
 
 # BEGIN SCRIPT SETTINGS
-cycles=1 # Default number of worlds to generate if no number was passed. [1]
-params=AUTO # Name of the parameter set in "data/init/world_gen.txt" to use. [AUTO]
-seed=RANDOM # Seed to use for world generation. [RANDOM]
-convert=YES # Convert maps from BMP to PNG? (Smaller filesize; requires ImageMagick.) [YES]
-composite=YES # Create a combined image from the height and biome maps? (Requires ImageMagick.) [YES]
-backup=YES # Make a backup of the newly created world? [YES]
-pause=0 # Number of seconds to pause after completion. If less than zero, wait for keypress. [0]
+declare -i cycles=1 # Default number of worlds to generate if no number was passed. [1]
+declare -i pause=0 # Number of seconds to pause after completion. If less than zero, wait for keypress. [0]
+declare params=AUTO # Name of the parameter set in "data/init/world_gen.txt" to use. [AUTO]
+declare seed=RANDOM # Seed to use for world generation. [RANDOM]
+declare convert=YES # Convert maps from BMP to PNG? (Smaller filesize; requires ImageMagick.) [YES]
+declare composite=YES # Create a combined image from the height and biome maps? (Requires ImageMagick.) [YES]
+declare backup=YES # Make a backup of the newly created world? [YES]
 # END SCRIPT SETTINGS
 
 # BEGIN FUNCTIONS
@@ -109,9 +109,9 @@ function do_backup() {
 # END FUNCTIONS
 
 # BEGIN SET STARTING VALUES
-statuscode=0 # Set the status code to 0 (Success) for now.
-errorcode=0 # Set the detailed error code to 0 (None) for now.
-count=0 # Set the count to 0.
+declare -i statuscode=0 # Set the status code to 0 (Success) for now.
+declare -i errorcode=0 # Set the detailed error code to 0 (None) for now.
+declare -i count=0 # Set the count to 0.
 # END SET STARTING VALUES
 
 # BEGIN SCRIPT OPERATION
@@ -120,7 +120,7 @@ if [[ -n "$1" ]] && [[ "$1" =~ ^[0-9]+$ ]]; then # If a number was passed to the
 fi
 
 # Change the current directory to where the script is located for compatibility with launchers.
-rootdir=$(dirname "$(realpath -z "$0")")
+declare rootdir=$(dirname "$(realpath -z "$0")")
 cd "$rootdir"
 
 while [[ $count -lt $cycles ]] && [[ $statuscode -eq 0 ]]; do # While count is less than cycles and status code is 0 (Success) ...
