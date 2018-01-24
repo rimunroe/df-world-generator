@@ -144,6 +144,7 @@ while [[ $count -lt $cycles ]] && [[ $statuscode -eq 0 ]]; do # While count is l
 	echo " Done! ($name)"
 	echo -n "    Organizing files... "
 	if [[ -d "data/save/$name" ]]; then # If a world already exists that has the same name ...
+		# Pretty sure the code can never get here...
 		echo "Fail!" # Echo an error message and delete the generated files.
 		echo "[?] World with that name already exists! Regenerating world..."
 		rm region99*-world_map.bmp
