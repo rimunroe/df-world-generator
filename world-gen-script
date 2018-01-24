@@ -41,6 +41,19 @@ pause=0 # Number of seconds to pause after completion. If less than zero, wait f
 
 # BEGIN FUNCTIONS
 function quietly() { "$@" > /dev/null; } # Simple function to silence the output of commands.
+
+function do_generate_world() {
+	while [ true ]; do
+		echo -n "    Generating world... "
+		quietly ./df -gen 99 $seed "$params" # Quietly execute Dwarf Fortress in world generation mode.
+		wait $!
+		if [ "$!" = 139 ]; then
+			echo -n "Dwarf Fortress segfaulted. Restarting..."
+		else
+			break
+		fi
+	done
+}
 # END FUNCTIONS
 
 # BEGIN SET STARTING VALUES
@@ -64,18 +77,9 @@ while [[ $count -lt $cycles && $statuscode -ne 1 ]]; do # While count is less th
 		statuscode=1
 		errorcode=1
 	else # Otherwise ...
-		while [ true ]; do
-			echo -n "    Generating world... "
-			quietly ./df -gen 99 $seed "$params" # Quietly execute Dwarf Fortress in world generation mode.
-			wait $!
-			if [ "$!" = 139 ]; then
-				echo -n "Dwarf Fortress segfaulted. Restarting..."
-			else
-				break
-			fi
-		done
+		do_generate_world
 		if [ -d "data/save/region99" ]; then # If "region99" was created during world generation, then ...
-			echo "Done!"
+			echo "Done!" # That is, done generating the world
 			echo -n "    Reading world name... "
 			name=$(iconv -f CP437 -t UTF-8 region99-*-world_history.txt | head -n1) # Read the first line of "region99-world_history.txt" to get the world name.
 			if [[ -e "data/save/$name" ]] ; then
