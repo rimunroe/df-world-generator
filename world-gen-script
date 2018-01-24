@@ -119,13 +119,15 @@ if [[ -n "$1" ]] && [[ "$1" =~ ^[0-9]+$ ]]; then # If a number was passed to the
 	cycles=$1 # Set cycles to that number.
 fi
 
-rootdir=$(dirname "$(realpath -z "$0")") # Change the current directory to where the script is located for compatibility with launchers.
+# Change the current directory to where the script is located for compatibility with launchers.
+rootdir=$(dirname "$(realpath -z "$0")")
 cd "$rootdir"
 
 while [[ $count -lt $cycles ]] && [[ $statuscode -eq 0 ]]; do # While count is less than cycles and status code is 0 (Success) ...
 	echo "[?] Creating World ($(( $count+1 ))/$cycles)"
 	if [[ -d "data/save/region99" ]]; then # If a world with ID 99 exists in "data/save" then ...
-		echo "[!] Folder 'data/save/region99' already exists!" # Echo an error message and set the status code to 1 (Failure) and the error code to 1. (World ID 99 Exists)
+		# Echo an error message and set the status code to 1 (Failure) and the error code to 1. (World ID 99 Exists)
+		echo "[!] Folder 'data/save/region99' already exists!"
 		statuscode=1
 		errorcode=1
 		continue # Continue the loop from the top
@@ -133,7 +135,8 @@ while [[ $count -lt $cycles ]] && [[ $statuscode -eq 0 ]]; do # While count is l
 	# Otherwise ...
 	do_generate_world
 	if [[ ! -d "$rootdir/data/save/region99" ]]; then # If "region99" was NOT created during world generation, then ...
-		echo "World generation somehow failed!" # Echo an error message and set the status code to 1 (Failure) and the error code to 2. (World Folder Not Found)
+		# Echo an error message and set the status code to 1 (Failure) and the error code to 2. (World Folder Not Found)
+		echo "World generation somehow failed!"
 		echo "[!] Folder '$rootdir/data/save/region99' not found!"
 		statuscode=1
 		errorcode=2
@@ -141,13 +144,15 @@ while [[ $count -lt $cycles ]] && [[ $statuscode -eq 0 ]]; do # While count is l
 	fi
 	# Otherwise ...
 	echo -n "    Reading world name... "
-	name=$(iconv -f CP437 -t UTF-8 region99-*-world_history.txt | head -n1) # Read the first line of "region99-world_history.txt" to get the world name.
+	# Read the first line of "region99-world_history.txt" to get the world name.
+	name=$(iconv -f CP437 -t UTF-8 region99-*-world_history.txt | head -n1)
 	name=$( suffix_world_name "$name" )
 	echo " Done! ($name)"
 	echo -n "    Organizing files... "
 	if [[ -d "$rootdir/data/save/$name" ]]; then # If a world already exists that has the same name ...
 		# Pretty sure the code can never get here...
-		echo "Fail!" # Echo an error message and delete the generated files.
+		# Echo an error message and delete the generated files.
+		echo "Fail!"
 		echo "[?] World with that name already exists! Regenerating world..."
 		rm region99*-world_map.bmp
 		rm region99*-detailed.bmp
@@ -156,8 +161,10 @@ while [[ $count -lt $cycles ]] && [[ $statuscode -eq 0 ]]; do # While count is l
 		rm region99*-world_gen_param.txt
 		rm -r "$rootdir/data/save/region99" # ("-r" option needed to delete world folder.)
 	else # Otherwise ...
-		mv "$rootdir/data/save/region99" "$rootdir/data/save/$name" # Make the world's folder name reflect the actual world name.
-		mkdir -p "$rootdir/data/save/$name/info" # Make the "info" folder.
+		# Make the world's folder name reflect the actual world name.
+		mv "$rootdir/data/save/region99" "$rootdir/data/save/$name"
+		# Make the "info" folder.
+		mkdir -p "$rootdir/data/save/$name/info"
 
 		# Move the info files to the "info" folder and clean up their file names.
 		pushd "$rootdir"
@@ -169,19 +176,24 @@ while [[ $count -lt $cycles ]] && [[ $statuscode -eq 0 ]]; do # While count is l
 		popd
 
 		echo "Done!"
-		do_convert "$name" # Does the convert, if set
-		do_backup "$name" # Does the backup, if set
-		cd "$rootdir" # Change directory to where the script is located.
-		(( count++ )) # Increase count by one.
+		# Does the convert, if set
+		do_convert "$name"
+		# Does the backup, if set
+		do_backup "$name"
+		cd "$rootdir" # Go back to the rootdir, where the script is located.
+		# Increase world-generation count by one.
+		(( count++ ))
 	fi
 done
 
 # Output the appropriate message.
 if [[ $statuscode -eq 0 ]]; then # If status code is 0 (Success), then ...
-	echo "[?] Operation completed successfully." # Report success.
+	# Report success.
+	echo "[?] Operation completed successfully."
 else # Otherwise ...
 	echo "[?] An error occurred during operation." # Report failure.
-	case $errorcode in # Output a detailed error message according to the error code.
+	# Output a detailed error message according to the error code.
+	case $errorcode in
 		1 )
 			echo "[?] A saved world named 'region99' already exists."
 			echo "    Rename, move, or delete this folder."
@@ -193,10 +205,13 @@ else # Otherwise ...
 fi
 
 if (( $pause >= 0 )); then # If "pause" is greater than or equal to 0, then ...
-	sleep $pause # Sleep for "pause" seconds.
+	# Sleep for "pause" seconds.
+	sleep $pause
 else # Otherwise ...
-	read -p "" -n1 -s # Wait for a keypress.
+	# Wait for a keypress.
+	read -p "" -n1 -s
 fi
 
-exit $statuscode # Exit, reporting status code.
+# Exit, reporting status code.
+exit $statuscode
 # END SCRIPT OPERATION
