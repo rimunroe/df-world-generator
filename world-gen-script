@@ -57,7 +57,7 @@ function do_generate_world() {
 }
 
 function suffix_world_name() {
-	local $name="$1"
+	local name="$1"
 	if [[ -e "data/save/$name" ]] ; then
 		echo -n "World with name '$name' already exists, renaming..."
 		# Test a numeric suffix until we find a free name
@@ -80,11 +80,12 @@ function do_composite() {
 }
 
 function do_convert() {
+	local -r name="$1"
 	if [ "$convert" != 'YES' ]; then # If "convert" is NOT "YES", then return
 		return
 	fi
 	echo -n "    Converting images to PNG... "
-	cd info # Move to the info directory.
+	cd "$rootdir/data/save/$name/info" # Move to the info directory.
 	# Convert each map to PNG.
 	convert "Biome Map.bmp" "Biome Map.png"
 	convert "Height Map.bmp" "Height Map.png"
@@ -96,12 +97,12 @@ function do_convert() {
 }
 
 function do_backup() {
-	local -r $name="$1"
+	local -r name="$1"
 	if [ "$backup" != 'YES' ]; then # If "backup" is NOT "YES", then return
 		return
 	fi
 	echo -n "    Performing backup... "
-	cd ../.. # Go to the save directory and create a backup of the world.
+	cd "$rootdir/data/save" # Go to the save directory and create a backup of the world.
 	tar --create --gzip --file="$name (Fresh World).tar.gz" "$name"
 	echo "Done!"
 }
@@ -155,17 +156,20 @@ while [[ $count -lt $cycles ]] && [[ $statuscode -eq 0 ]]; do # While count is l
 		rm region99*-world_gen_param.txt
 		rm -r "$rootdir/data/save/region99" # ("-r" option needed to delete world folder.)
 	else # Otherwise ...
-		cd "$rootdir/data/save" # Move to the save directory.
-		mv "region99" "$name" # Make the world's folder name reflect the actual world name.
-		cd "$name" # Move to the world's directory.
-		mkdir info # Make the "info" folder.
-		mv ../../../region99*-world_map.bmp "info/Biome Map.bmp" # Move the info files to the "info" folder and clean up their file names.
-		mv ../../../region99*-detailed.bmp "info/Height Map.bmp"
-		mv ../../../region99*-world_history.txt "info/History.txt"
-		mv ../../../region99*-world_sites_and_pops.txt "info/Sites.txt"
-		mv ../../../region99*-world_gen_param.txt "info/Parameters.txt"
+		mv "$rootdir/data/save/region99" "$rootdir/data/save/$name" # Make the world's folder name reflect the actual world name.
+		mkdir -p "$rootdir/data/save/$name/info" # Make the "info" folder.
+
+		# Move the info files to the "info" folder and clean up their file names.
+		pushd "$rootdir"
+		mv region99*-world_map.bmp            "$rootdir/data/save/$name/info/Biome Map.bmp"
+		mv region99*-detailed.bmp             "$rootdir/data/save/$name/info/Height Map.bmp"
+		mv region99*-world_history.txt        "$rootdir/data/save/$name/info/History.txt"
+		mv region99*-world_sites_and_pops.txt "$rootdir/data/save/$name/info/Sites.txt"
+		mv region99*-world_gen_param.txt      "$rootdir/data/save/$name/info/Parameters.txt"
+		popd
+
 		echo "Done!"
-		do_convert # Does the convert, if set
+		do_convert "$name" # Does the convert, if set
 		do_backup "$name" # Does the backup, if set
 		cd "$rootdir" # Change directory to where the script is located.
 		(( count++ )) # Increase count by one.
