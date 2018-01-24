@@ -120,9 +120,10 @@ while [[ $count -lt $cycles ]] && [[ $statuscode -eq 0 ]]; do # While count is l
 			name=$(iconv -f CP437 -t UTF-8 region99-*-world_history.txt | head -n1) # Read the first line of "region99-world_history.txt" to get the world name.
 			if [[ -e "data/save/$name" ]] ; then
 				echo -n "World with name $name already exists, renaming..."
+				# Test a numeric suffix until we find a free name
 				i=0
-				while [[ -e $name-$i ]] ; do
-					let i++
+				while [[ -e "$name-$i" ]] ; do
+					(( i++ ))
 				done
 				name=$name-$i
 			fi
@@ -151,7 +152,7 @@ while [[ $count -lt $cycles ]] && [[ $statuscode -eq 0 ]]; do # While count is l
 				do_convert # Does the convert, if set
 				do_backup "$name" # Does the backup, if set
 				cd "$rootdir" # Change directory to where the script is located.
-				count=$count+1 # Increase count by one.
+				(( count++ )) # Increase count by one.
 			fi
 		else # Otherwise ...
 			echo "Fail!" # Echo an error message and set the status code to 1 (Failure) and the error code to 2. (World Folder Not Found)
