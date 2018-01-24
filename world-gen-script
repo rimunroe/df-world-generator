@@ -131,9 +131,9 @@ while [[ $count -lt $cycles ]] && [[ $statuscode -eq 0 ]]; do # While count is l
 	fi
 	# Otherwise ...
 	do_generate_world
-	if [[ ! -d "data/save/region99" ]]; then # If "region99" was NOT created during world generation, then ...
+	if [[ ! -d "$rootdir/data/save/region99" ]]; then # If "region99" was NOT created during world generation, then ...
 		echo "World generation somehow failed!" # Echo an error message and set the status code to 1 (Failure) and the error code to 2. (World Folder Not Found)
-		echo "[!] Folder 'data/save/region99' not found!"
+		echo "[!] Folder '$rootdir/data/save/region99' not found!"
 		statuscode=1
 		errorcode=2
 		continue # Continue the loop from the top
@@ -144,7 +144,7 @@ while [[ $count -lt $cycles ]] && [[ $statuscode -eq 0 ]]; do # While count is l
 	name=$( suffix_world_name "$name" )
 	echo " Done! ($name)"
 	echo -n "    Organizing files... "
-	if [[ -d "data/save/$name" ]]; then # If a world already exists that has the same name ...
+	if [[ -d "$rootdir/data/save/$name" ]]; then # If a world already exists that has the same name ...
 		# Pretty sure the code can never get here...
 		echo "Fail!" # Echo an error message and delete the generated files.
 		echo "[?] World with that name already exists! Regenerating world..."
@@ -153,9 +153,9 @@ while [[ $count -lt $cycles ]] && [[ $statuscode -eq 0 ]]; do # While count is l
 		rm region99*-world_history.txt
 		rm region99*-world_sites_and_pops.txt
 		rm region99*-world_gen_param.txt
-		rm -r data/save/region99 # ("-r" option needed to delete world folder.)
+		rm -r "$rootdir/data/save/region99" # ("-r" option needed to delete world folder.)
 	else # Otherwise ...
-		cd data/save/ # Move to the save directory.
+		cd "$rootdir/data/save" # Move to the save directory.
 		mv "region99" "$name" # Make the world's folder name reflect the actual world name.
 		cd "$name" # Move to the world's directory.
 		mkdir info # Make the "info" folder.
