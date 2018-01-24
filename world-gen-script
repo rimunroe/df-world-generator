@@ -183,23 +183,20 @@ while [[ $count -lt $cycles ]] && [[ $errorcode -eq 0 ]]; do # While count is le
 	fi
 done
 
-# Output the appropriate message.
-if [[ $errorcode -eq 0 ]]; then # If status code is 0 (Success), then ...
-	# Report success.
-	echo "[?] Operation completed successfully."
-else # Otherwise ...
-	echo "[?] An error occurred during operation." # Report failure.
-	# Output a detailed error message according to the error code.
-	case $errorcode in
-		1 )
-			echo "[?] A saved world named 'region99' already exists."
-			echo "    Rename, move, or delete this folder."
-			;;
-		2 )
-			echo "[?] Dwarf Fortress didn't generate a world folder. Perhaps you aborted?"
-			;;
-	esac
-fi
+# Output a detailed status or error message according to the errorcode
+case $errorcode in
+	0 )
+		echo "[?] Operation completed successfully." ;;
+	1 )
+		echo "[?] An error occurred during operation." # Report failure.
+		echo "[?] A saved world named 'region99' already exists."
+		echo "    Rename, move, or delete this folder."
+		;;
+	2 )
+		echo "[?] An error occurred during operation." # Report failure.
+		echo "[?] Dwarf Fortress didn't generate a world folder. Perhaps you aborted?"
+		;;
+esac
 
 if (( $pause >= 0 )); then # If "pause" is greater than or equal to 0, then ...
 	# Sleep for "pause" seconds.
