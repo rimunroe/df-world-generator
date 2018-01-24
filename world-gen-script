@@ -57,6 +57,7 @@ function do_generate_world() {
 }
 
 function suffix_world_name() {
+	local $name="$1"
 	if [[ -e "data/save/$name" ]] ; then
 		echo -n "World with name '$name' already exists, renaming..."
 		# Test a numeric suffix until we find a free name
