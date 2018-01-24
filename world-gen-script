@@ -63,6 +63,22 @@ function do_composite() {
 	composite -dissolve 30,100 "Height Map.png" "Biome Map.png" "Composite Map.png" # Create the composite map.
 	echo "Done!"
 }
+
+function do_convert() {
+	if [ "$convert" != 'YES' ]; then # If "convert" is NOT "YES", then return
+		return
+	fi
+	echo -n "    Converting images to PNG... "
+	cd info # Move to the info directory.
+	# Convert each map to PNG.
+	convert "Biome Map.bmp" "Biome Map.png"
+	convert "Height Map.bmp" "Height Map.png"
+	# Delete the old maps.
+	rm "Biome Map.bmp"
+	rm "Height Map.bmp"
+	echo "Done!"
+	do_composite # Does the compositing, if set
+}
 # END FUNCTIONS
 
 # BEGIN SET STARTING VALUES
@@ -121,16 +137,7 @@ while [[ $count -lt $cycles && $statuscode -ne 1 ]]; do # While count is less th
 				mv ../../../region99*-world_sites_and_pops.txt "info/Sites.txt"
 				mv ../../../region99*-world_gen_param.txt "info/Parameters.txt"
 				echo "Done!"
-				if [ $convert == YES ]; then # If "convert" is "YES", then ...
-					echo -n "    Converting images to PNG... "
-					cd info # Move to the info directory.
-					convert "Biome Map.bmp" "Biome Map.png" # Convert each map to PNG.
-					convert "Height Map.bmp" "Height Map.png"
-					rm "Biome Map.bmp" # Delete the old maps.
-					rm "Height Map.bmp"
-					echo "Done!"
-					do_composite # Does the compositing, if set
-				fi
+				do_convert # Does the convert, if set
 				if [ $backup == YES ]; then # If "backup" is "YES", then ...
 					echo -n "    Performing backup... "
 					cd ../.. # Go to the save directory and create a backup of the world.
