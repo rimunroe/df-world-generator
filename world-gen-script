@@ -47,7 +47,7 @@ function do_generate_world() {
 	while [ true ]; do
 		quietly ./df -gen 99 $seed "$params" # Quietly execute Dwarf Fortress in world generation mode.
 		wait $!
-		if [ "$!" = 139 ]; then
+		if [[ "$!" == 139 ]]; then
 			echo -n "Dwarf Fortress segfaulted. Restarting..."
 		else
 			break
