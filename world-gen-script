@@ -125,46 +125,48 @@ while [[ $count -lt $cycles ]] && [[ $statuscode -eq 0 ]]; do # While count is l
 		echo "[!] Folder 'data/save/region99' already exists!" # Echo an error message and set the status code to 1 (Failure) and the error code to 1. (World ID 99 Exists)
 		statuscode=1
 		errorcode=1
+		continue # Continue the loop from the top
+	fi
+	# Otherwise ...
+	do_generate_world
+	if [[ ! -d "data/save/region99" ]]; then # If "region99" was NOT created during world generation, then ...
+		echo "Fail!" # Echo an error message and set the status code to 1 (Failure) and the error code to 2. (World Folder Not Found)
+		echo "[!] Folder 'data/save/region99' not found!"
+		statuscode=1
+		errorcode=2
+		continue # Continue the loop from the top
+	fi
+	# Otherwise ...
+	echo "Done!" # That is, done generating the world
+	echo -n "    Reading world name... "
+	name=$(iconv -f CP437 -t UTF-8 region99-*-world_history.txt | head -n1) # Read the first line of "region99-world_history.txt" to get the world name.
+	name=$( suffix_world_name "$name" )
+	echo " Done! ($name)"
+	echo -n "    Organizing files... "
+	if [[ -d "data/save/$name" ]]; then # If a world already exists that has the same name ...
+		echo "Fail!" # Echo an error message and delete the generated files.
+		echo "[?] World with that name already exists! Regenerating world..."
+		rm region99*-world_map.bmp
+		rm region99*-detailed.bmp
+		rm region99*-world_history.txt
+		rm region99*-world_sites_and_pops.txt
+		rm region99*-world_gen_param.txt
+		rm -r data/save/region99 # ("-r" option needed to delete world folder.)
 	else # Otherwise ...
-		do_generate_world
-		if [[ -d "data/save/region99" ]]; then # If "region99" was created during world generation, then ...
-			echo "Done!" # That is, done generating the world
-			echo -n "    Reading world name... "
-			name=$(iconv -f CP437 -t UTF-8 region99-*-world_history.txt | head -n1) # Read the first line of "region99-world_history.txt" to get the world name.
-			name=$( suffix_world_name "$name" )
-			echo " Done! ($name)"
-			echo -n "    Organizing files... "
-			if [[ -d "data/save/$name" ]]; then # If a world already exists that has the same name ...
-				echo "Fail!" # Echo an error message and delete the generated files.
-				echo "[?] World with that name already exists! Regenerating world..."
-				rm region99*-world_map.bmp
-				rm region99*-detailed.bmp
-				rm region99*-world_history.txt
-				rm region99*-world_sites_and_pops.txt
-				rm region99*-world_gen_param.txt
-				rm -r data/save/region99 # ("-r" option needed to delete world folder.)
-			else # Otherwise ...
-				cd data/save/ # Move to the save directory.
-				mv "region99" "$name" # Make the world's folder name reflect the actual world name.
-				cd "$name" # Move to the world's directory.
-				mkdir info # Make the "info" folder.
-				mv ../../../region99*-world_map.bmp "info/Biome Map.bmp" # Move the info files to the "info" folder and clean up their file names.
-				mv ../../../region99*-detailed.bmp "info/Height Map.bmp"
-				mv ../../../region99*-world_history.txt "info/History.txt"
-				mv ../../../region99*-world_sites_and_pops.txt "info/Sites.txt"
-				mv ../../../region99*-world_gen_param.txt "info/Parameters.txt"
-				echo "Done!"
-				do_convert # Does the convert, if set
-				do_backup "$name" # Does the backup, if set
-				cd "$rootdir" # Change directory to where the script is located.
-				(( count++ )) # Increase count by one.
-			fi
-		else # Otherwise ...
-			echo "Fail!" # Echo an error message and set the status code to 1 (Failure) and the error code to 2. (World Folder Not Found)
-			echo "[!] Folder 'data/save/region99' not found!"
-			statuscode=1
-			errorcode=2
-		fi
+		cd data/save/ # Move to the save directory.
+		mv "region99" "$name" # Make the world's folder name reflect the actual world name.
+		cd "$name" # Move to the world's directory.
+		mkdir info # Make the "info" folder.
+		mv ../../../region99*-world_map.bmp "info/Biome Map.bmp" # Move the info files to the "info" folder and clean up their file names.
+		mv ../../../region99*-detailed.bmp "info/Height Map.bmp"
+		mv ../../../region99*-world_history.txt "info/History.txt"
+		mv ../../../region99*-world_sites_and_pops.txt "info/Sites.txt"
+		mv ../../../region99*-world_gen_param.txt "info/Parameters.txt"
+		echo "Done!"
+		do_convert # Does the convert, if set
+		do_backup "$name" # Does the backup, if set
+		cd "$rootdir" # Change directory to where the script is located.
+		(( count++ )) # Increase count by one.
 	fi
 done
 
