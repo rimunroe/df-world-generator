@@ -109,7 +109,6 @@ function do_backup() {
 # END FUNCTIONS
 
 # BEGIN SET STARTING VALUES
-declare -i statuscode=0 # Set the status code to 0 (Success) for now.
 declare -i errorcode=0 # Set the detailed error code to 0 (None) for now.
 declare -i count=0 # Set the count to 0.
 # END SET STARTING VALUES
@@ -123,12 +122,11 @@ fi
 declare rootdir=$(dirname "$(realpath -z "$0")")
 cd "$rootdir"
 
-while [[ $count -lt $cycles ]] && [[ $statuscode -eq 0 ]]; do # While count is less than cycles and status code is 0 (Success) ...
+while [[ $count -lt $cycles ]] && [[ $errorcode -eq 0 ]]; do # While count is less than cycles and errorcode is 0 (Success) ...
 	echo "[?] Creating World ($(( $count+1 ))/$cycles)"
 	if [[ -d "data/save/region99" ]]; then # If a world with ID 99 exists in "data/save" then ...
 		# Echo an error message and set the status code to 1 (Failure) and the error code to 1. (World ID 99 Exists)
 		echo "[!] Folder 'data/save/region99' already exists!"
-		statuscode=1
 		errorcode=1
 		continue # Continue the loop from the top
 	fi
@@ -138,7 +136,6 @@ while [[ $count -lt $cycles ]] && [[ $statuscode -eq 0 ]]; do # While count is l
 		# Echo an error message and set the status code to 1 (Failure) and the error code to 2. (World Folder Not Found)
 		echo "World generation somehow failed!"
 		echo "[!] Folder '$rootdir/data/save/region99' not found!"
-		statuscode=1
 		errorcode=2
 		continue # Continue the loop from the top
 	fi
@@ -187,7 +184,7 @@ while [[ $count -lt $cycles ]] && [[ $statuscode -eq 0 ]]; do # While count is l
 done
 
 # Output the appropriate message.
-if [[ $statuscode -eq 0 ]]; then # If status code is 0 (Success), then ...
+if [[ $errorcode -eq 0 ]]; then # If status code is 0 (Success), then ...
 	# Report success.
 	echo "[?] Operation completed successfully."
 else # Otherwise ...
@@ -213,5 +210,5 @@ else # Otherwise ...
 fi
 
 # Exit, reporting status code.
-exit $statuscode
+exit $errorcode
 # END SCRIPT OPERATION
