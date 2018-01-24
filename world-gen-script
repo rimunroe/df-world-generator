@@ -54,6 +54,15 @@ function do_generate_world() {
 		fi
 	done
 }
+
+function do_composite() {
+	if [ "$composite" != 'YES' ]; then # If "composite" is NOT "YES", then return
+		return
+	fi
+	echo -n "    Creating composite map... "
+	composite -dissolve 30,100 "Height Map.png" "Biome Map.png" "Composite Map.png" # Create the composite map.
+	echo "Done!"
+}
 # END FUNCTIONS
 
 # BEGIN SET STARTING VALUES
@@ -120,11 +129,7 @@ while [[ $count -lt $cycles && $statuscode -ne 1 ]]; do # While count is less th
 					rm "Biome Map.bmp" # Delete the old maps.
 					rm "Height Map.bmp"
 					echo "Done!"
-					if [ $composite == YES ]; then # If "composite" is "YES", then ...
-						echo -n "    Creating composite map... "
-						composite -dissolve 30,100 "Height Map.png" "Biome Map.png" "Composite Map.png" # Create the composite map.
-						echo "Done!"
-					fi
+					do_composite # Does the compositing, if set
 				fi
 				if [ $backup == YES ]; then # If "backup" is "YES", then ...
 					echo -n "    Performing backup... "
