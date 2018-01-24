@@ -39,19 +39,23 @@ backup=YES # Make a backup of the newly created world? [YES]
 pause=0 # Number of seconds to pause after completion. If less than zero, wait for keypress. [0]
 # END SCRIPT SETTINGS
 
-# BEGIN SCRIPT OPERATION
+# BEGIN FUNCTIONS
+function quietly() { "$@" > /dev/null; } # Simple function to silence the output of commands.
+# END FUNCTIONS
+
+# BEGIN SET STARTING VALUES
 statuscode=0 # Set the status code to 0 (Success) for now.
 errorcode=0 # Set the detailed error code to 0 (None) for now.
 count=0 # Set the count to 0.
+# END SET STARTING VALUES
 
+# BEGIN SCRIPT OPERATION
 if [[ -n "$1" && $1 =~ ^[0-9]+$ ]]; then # If a number was passed to the script, then ...
 	cycles=$1 # Set cycles to that number.
 fi
 
 rootdir=$(dirname "$(realpath -z "$0")") # Change the current directory to where the script is located for compatibility with launchers.
 cd "$rootdir"
-
-function quietly() { "$@" > /dev/null; } # Simple function to silence the output of commands.
 
 while [[ $count -lt $cycles && $statuscode -ne 1 ]]; do # While count is less than cycles and status code isn't 1 (Failure) ...
 	echo "[?] Creating World ($(( $count+1 ))/$cycles)"
