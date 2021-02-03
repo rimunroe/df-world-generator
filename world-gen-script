@@ -30,133 +30,182 @@
 #       ! Initial Release
 
 # BEGIN SCRIPT SETTINGS
-cycles=1 # Default number of worlds to generate if no number was passed. [1]
-params=AUTO # Name of the parameter set in "data/init/world_gen.txt" to use. [AUTO]
-seed=RANDOM # Seed to use for world generation. [RANDOM]
-convert=YES # Convert maps from BMP to PNG? (Smaller filesize; requires ImageMagick.) [YES]
-composite=YES # Create a combined image from the height and biome maps? (Requires ImageMagick.) [YES]
-backup=YES # Make a backup of the newly created world? [YES]
-pause=0 # Number of seconds to pause after completion. If less than zero, wait for keypress. [0]
+declare -i cycles=1 # Default number of worlds to generate if no number was passed. [1]
+declare -i pause=0 # Number of seconds to pause after completion. If less than zero, wait for keypress. [0]
+declare params=AUTO # Name of the parameter set in "data/init/world_gen.txt" to use. [AUTO]
+declare seed=RANDOM # Seed to use for world generation. [RANDOM]
+declare convert=YES # Convert maps from BMP to PNG? (Smaller filesize; requires ImageMagick.) [YES]
+declare composite=YES # Create a combined image from the height and biome maps? (Requires ImageMagick.) [YES]
+declare backup=YES # Make a backup of the newly created world? [YES]
 # END SCRIPT SETTINGS
 
-# BEGIN SCRIPT OPERATION
-statuscode=0 # Set the status code to 0 (Success) for now.
-errorcode=0 # Set the detailed error code to 0 (None) for now.
-count=0 # Set the count to 0.
+# BEGIN FUNCTIONS
+function quietly() { "$@" > /dev/null; } # Simple function to silence the output of commands.
 
-if [[ -n "$1" && $1 =~ ^[0-9]+$ ]]; then # If a number was passed to the script, then ...
+function do_generate_world() {
+	echo -n "    Generating world... "
+	while : ; do
+		quietly ./df -gen 99 $seed "$params" # Quietly execute Dwarf Fortress in world generation mode.
+		wait $!
+		if [[ "$!" == 139 ]]; then
+			echo -n "Dwarf Fortress segfaulted. Restarting..."
+		else
+			break
+		fi
+	done
+	echo "Done!"
+}
+
+function suffix_world_name() {
+	local name="$1"
+	if [[ -e "data/save/$name" ]] ; then
+		echo -n "World with name '$name' already exists, renaming..."
+		# Test a numeric suffix until we find a free name
+		i=0
+		while [[ -e "$name-$i" ]] ; do
+			(( i++ ))
+		done
+		name="$name-$i"
+	fi
+	echo "$name"
+}
+
+function do_composite() {
+	if [ "$composite" != 'YES' ]; then # If "composite" is NOT "YES", then return
+		return
+	fi
+	echo -n "    Creating composite map... "
+	composite -dissolve 30,100 "Height Map.png" "Biome Map.png" "Composite Map.png" # Create the composite map.
+	echo "Done!"
+}
+
+function do_convert() {
+	local -r name="$1"
+	if [ "$convert" != 'YES' ]; then # If "convert" is NOT "YES", then return
+		return
+	fi
+	echo -n "    Converting images to PNG... "
+	cd "$rootdir/data/save/$name/info" # Move to the info directory.
+	# Convert each map to PNG.
+	convert "Biome Map.bmp" "Biome Map.png"
+	convert "Height Map.bmp" "Height Map.png"
+	# Delete the old maps.
+	rm "Biome Map.bmp"
+	rm "Height Map.bmp"
+	echo "Done!"
+	do_composite # Does the compositing, if set
+}
+
+function do_backup() {
+	local -r name="$1"
+	if [ "$backup" != 'YES' ]; then # If "backup" is NOT "YES", then return
+		return
+	fi
+	echo -n "    Performing backup... "
+	cd "$rootdir/data/save" # Go to the save directory and create a backup of the world.
+	tar --create --gzip --file="$name (Fresh World).tar.gz" "$name"
+	echo "Done!"
+}
+# END FUNCTIONS
+
+# BEGIN SET STARTING VALUES
+declare -i errorcode=0 # Set the detailed error code to 0 (None) for now.
+declare -i count=0 # Set the count to 0.
+# END SET STARTING VALUES
+
+# BEGIN SCRIPT OPERATION
+if [[ -n "$1" ]] && [[ "$1" =~ ^[0-9]+$ ]]; then # If a number was passed to the script, then ...
 	cycles=$1 # Set cycles to that number.
 fi
 
-rootdir=$(dirname "$(realpath -z "$0")") # Change the current directory to where the script is located for compatibility with launchers.
+# Change the current directory to where the script is located for compatibility with launchers.
+declare rootdir=$(dirname "$(realpath -z "$0")")
 cd "$rootdir"
 
-function quietly() { "$@" > /dev/null; } # Simple function to silence the output of commands.
-
-while [[ $count -lt $cycles && $statuscode -ne 1 ]]; do # While count is less than cycles and status code isn't 1 (Failure) ...
+while [[ $count -lt $cycles ]] && [[ $errorcode -eq 0 ]]; do # While count is less than cycles and errorcode is 0 (Success) ...
 	echo "[?] Creating World ($(( $count+1 ))/$cycles)"
-	if [ -d "data/save/region99" ]; then # If a world with ID 99 exists in "data/save" then ...
-		echo "[!] Folder 'data/save/region99' already exists!" # Echo an error message and set the status code to 1 (Failure) and the error code to 1. (World ID 99 Exists)
-		statuscode=1
+	if [[ -d "data/save/region99" ]]; then # If a world with ID 99 exists in "data/save" then ...
+		# Echo an error message and set the status code to 1 (Failure) and the error code to 1. (World ID 99 Exists)
+		echo "[!] Folder 'data/save/region99' already exists!"
 		errorcode=1
+		continue # Continue the loop from the top
+	fi
+	# Otherwise ...
+	do_generate_world
+	if [[ ! -d "$rootdir/data/save/region99" ]]; then # If "region99" was NOT created during world generation, then ...
+		# Echo an error message and set the status code to 1 (Failure) and the error code to 2. (World Folder Not Found)
+		echo "World generation somehow failed!"
+		echo "[!] Folder '$rootdir/data/save/region99' not found!"
+		errorcode=2
+		continue # Continue the loop from the top
+	fi
+	# Otherwise ...
+	echo -n "    Reading world name... "
+	# Read the first line of "region99-world_history.txt" to get the world name.
+	name=$(iconv -f CP437 -t UTF-8 region99-*-world_history.txt | head -n1)
+	name=$( suffix_world_name "$name" )
+	echo " Done! ($name)"
+	echo -n "    Organizing files... "
+	if [[ -d "$rootdir/data/save/$name" ]]; then # If a world already exists that has the same name ...
+		# Pretty sure the code can never get here...
+		# Echo an error message and delete the generated files.
+		echo "Fail!"
+		echo "[?] World with that name already exists! Regenerating world..."
+		rm region99*-world_map.bmp
+		rm region99*-detailed.bmp
+		rm region99*-world_history.txt
+		rm region99*-world_sites_and_pops.txt
+		rm region99*-world_gen_param.txt
+		rm -r "$rootdir/data/save/region99" # ("-r" option needed to delete world folder.)
 	else # Otherwise ...
-		while [ true ]; do
-			echo -n "    Generating world... "
-			quietly ./df -gen 99 $seed "$params" # Quietly execute Dwarf Fortress in world generation mode.
-			wait $!
-			if [ "$!" = 139 ]; then
-				echo -n "Dwarf Fortress segfaulted. Restarting..."
-			else
-				break
-			fi
-		done
-		if [ -d "data/save/region99" ]; then # If "region99" was created during world generation, then ...
-			echo "Done!"
-			echo -n "    Reading world name... "
-			name=$(iconv -f CP437 -t UTF-8 region99-*-world_history.txt | head -n1) # Read the first line of "region99-world_history.txt" to get the world name.
-			if [[ -e "data/save/$name" ]] ; then
-				echo -n "World with name $name already exists, renaming..."
-				i=0
-				while [[ -e $name-$i ]] ; do
-					let i++
-				done
-				name=$name-$i
-			fi
-			echo " Done! ($name)"
-			echo -n "    Organizing files... "
-			if [ -d "data/save/$name" ]; then # If a world already exists that has the same name ...
-				echo "Fail!" # Echo an error message and delete the generated files.
-				echo "[?] World with that name already exists! Regenerating world..."
-				rm region99*-world_map.bmp
-				rm region99*-detailed.bmp
-				rm region99*-world_history.txt
-				rm region99*-world_sites_and_pops.txt
-				rm region99*-world_gen_param.txt
-				rm -r data/save/region99 # ("-r" option needed to delete world folder.)
-			else # Otherwise ...
-				cd data/save/ # Move to the save directory.
-				mv "region99" "$name" # Make the world's folder name reflect the actual world name.
-				cd "$name" # Move to the world's directory.
-				mkdir info # Make the "info" folder.
-				mv ../../../region99*-world_map.bmp "info/Biome Map.bmp" # Move the info files to the "info" folder and clean up their file names.
-				mv ../../../region99*-detailed.bmp "info/Height Map.bmp"
-				mv ../../../region99*-world_history.txt "info/History.txt"
-				mv ../../../region99*-world_sites_and_pops.txt "info/Sites.txt"
-				mv ../../../region99*-world_gen_param.txt "info/Parameters.txt"
-				echo "Done!"
-				if [ $convert == YES ]; then # If "convert" is "YES", then ...
-					echo -n "    Converting images to PNG... "
-					cd info # Move to the info directory.
-					convert "Biome Map.bmp" "Biome Map.png" # Convert each map to PNG.
-					convert "Height Map.bmp" "Height Map.png"
-					rm "Biome Map.bmp" # Delete the old maps.
-					rm "Height Map.bmp"
-					echo "Done!"
-					if [ $composite == YES ]; then # If "composite" is "YES", then ...
-						echo -n "    Creating composite map... "
-						composite -dissolve 30,100 "Height Map.png" "Biome Map.png" "Composite Map.png" # Create the composite map.
-						echo "Done!"
-					fi
-				fi
-				if [ $backup == YES ]; then # If "backup" is "YES", then ...
-					echo -n "    Performing backup... "
-					cd ../.. # Go to the save directory and create a backup of the world.
-					tar --create --gzip --file="$name (Fresh World).tar.gz" "$name"
-					echo "Done!"
-				fi
-				cd "$rootdir" # Change directory to where the script is located.
-				count=$count+1 # Increase count by one.
-			fi
-		else # Otherwise ...
-			echo "Fail!" # Echo an error message and set the status code to 1 (Failure) and the error code to 2. (World Folder Not Found)
-			echo "[!] Folder 'data/save/region99' not found!"
-			statuscode=1
-			errorcode=2
-		fi
+		# Make the world's folder name reflect the actual world name.
+		mv "$rootdir/data/save/region99" "$rootdir/data/save/$name"
+		# Make the "info" folder.
+		mkdir -p "$rootdir/data/save/$name/info"
+
+		# Move the info files to the "info" folder and clean up their file names.
+		pushd "$rootdir"
+		mv region99*-world_map.bmp            "$rootdir/data/save/$name/info/Biome Map.bmp"
+		mv region99*-detailed.bmp             "$rootdir/data/save/$name/info/Height Map.bmp"
+		mv region99*-world_history.txt        "$rootdir/data/save/$name/info/History.txt"
+		mv region99*-world_sites_and_pops.txt "$rootdir/data/save/$name/info/Sites.txt"
+		mv region99*-world_gen_param.txt      "$rootdir/data/save/$name/info/Parameters.txt"
+		popd
+
+		echo "Done!"
+		# Does the convert, if set
+		do_convert "$name"
+		# Does the backup, if set
+		do_backup "$name"
+		cd "$rootdir" # Go back to the rootdir, where the script is located.
+		# Increase world-generation count by one.
+		(( count++ ))
 	fi
 done
 
-# Output the appropriate message.
-if [ $statuscode == 0 ]; then # If status code is 0 (Success), then ...
-	echo "[?] Operation completed successfully." # Report success.
-else # Otherwise ...
-	echo "[?] An error occurred during operation." # Report failure.
-	case $errorcode in # Output a detailed error message according to the error code.
-		1 )
-			echo "[?] A saved world named 'region99' already exists."
-			echo "    Rename, move, or delete this folder."
-			;;
-		2 )
-			echo "[?] Dwarf Fortress didn't generate a world folder. Perhaps you aborted?"
-			;;
-	esac
-fi
+# Output a detailed status or error message according to the errorcode
+case $errorcode in
+	0 )
+		echo "[?] Operation completed successfully." ;;
+	1 )
+		echo "[?] An error occurred during operation." # Report failure.
+		echo "[?] A saved world named 'region99' already exists."
+		echo "    Rename, move, or delete this folder."
+		;;
+	2 )
+		echo "[?] An error occurred during operation." # Report failure.
+		echo "[?] Dwarf Fortress didn't generate a world folder. Perhaps you aborted?"
+		;;
+esac
 
 if (( $pause >= 0 )); then # If "pause" is greater than or equal to 0, then ...
-	sleep $pause # Sleep for "pause" seconds.
+	# Sleep for "pause" seconds.
+	sleep $pause
 else # Otherwise ...
-	read -p "" -n1 -s # Wait for a keypress.
+	# Wait for a keypress.
+	read -p "" -n1 -s
 fi
 
-exit $statuscode # Exit, reporting status code.
+# Exit, reporting status code.
+exit $errorcode
 # END SCRIPT OPERATION
